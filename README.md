@@ -77,19 +77,24 @@ Expo Go selalu memakai ikonnya sendiri. Untuk melihat ikon dan splash yang seben
 
 ## Struktur
 
-Dibagi per fitur, mengikuti pola kurosim-mobile.
+Dibagi per fitur: tiap layar punya modulnya sendiri, kode yang dipakai bersama ada di `common/`.
 
 ```text
 src/
   app/                  Route Expo Router saja. Tiap file hanya meneruskan ke modulnya,
                         misal profile.tsx → export { ProfileScreen as default } from '@/modules/profile'
-  modules/<fitur>/      main.screen.tsx, components/ khusus fitur itu, index.ts (export XxxScreen)
-                        home, library, connect, playlist, player, profile, appearance
+  modules/<fitur>/      main.screen.tsx, components/ dan hooks/ khusus fitur itu, index.ts (export XxxScreen)
+                        home, search, library, connect, playlist, player, notifications, profile, appearance
   common/
-    components/         Komponen bersama: teks, ikon, artwork, avatar, maskot, tab bar, dll.
-    store/              Store, tipe data, demo library
+    components/         Komponen bersama: teks, ikon, artwork, avatar, maskot, tab bar, splash, dll.
+    store/              Store (pemutar, riwayat, notifikasi, pengaturan), tipe data, demo library
     theme/              themes.ts (definisi tema), theme.tsx (useTheme, makeStyles), tokens.ts
+    youtube/            Klien YouTube Music, PoToken, dan WebView mesinnya
+    playback/           Pemutaran audio (expo-audio) dan antrean
   utils/                images.ts (simpan foto), format.ts
+scripts/
+  brand/                Membuat ikon dan splash dari assets/brand/
+  youtube-engine/       Script yang berjalan di WebView mesin YouTube
 ```
 
 Layar baru: buat `src/modules/<fitur>/` dengan `main.screen.tsx` dan `index.ts`, lalu satu file route di `src/app/` yang meneruskan ke sana.

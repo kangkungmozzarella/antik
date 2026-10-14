@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { space } from '@/theme/tokens';
+import { space } from '@/common/theme/tokens';
 
 /** Space kept free under scrolling content for the tab bar and mini player. */
 export const TAB_BAR_SPACE = 190;

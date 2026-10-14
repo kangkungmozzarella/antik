@@ -1,36 +1,58 @@
-import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, useFonts } from '@expo-google-fonts/fraunces';
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic } from '@expo-google-fonts/fraunces';
+import { Fredoka_400Regular, Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
-import { StoreProvider } from '@/state/store';
-import { color } from '@/theme/tokens';
+import { StoreProvider, useStore } from '@/common/store/store';
+import { ThemeProvider, useTheme } from '@/common/theme/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: color.bg, card: color.bg, primary: color.accent, text: color.text, border: color.line } };
-
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Fraunces_600SemiBold, Fraunces_600SemiBold_Italic });
-
-  // Hide the splash once fonts are ready, or if they fail (the system serif takes over).
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
-  if (!loaded && !error) return null;
+  const [loaded, error] = useFonts({ Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, Fredoka_400Regular, Fredoka_600SemiBold, Fredoka_700Bold });
+  // If fonts fail, the system fonts take over rather than keeping the splash up.
+  const fontsReady = loaded || !!error;
 
   return (
     <StoreProvider>
-      <ThemeProvider value={theme}>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="playlist/[id]" />
-          <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="settings" />
-        </Stack>
+      <ThemeProvider>
+        <App fontsReady={fontsReady} />
       </ThemeProvider>
     </StoreProvider>
+  );
+}
+
+function App({ fontsReady }: { fontsReady: boolean }) {
+  const { state } = useStore();
+  const theme = useTheme();
+  // Wait for saved settings too, so the app never flashes the default theme first.
+  const ready = fontsReady && state.hydrated;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  const navigationTheme = useMemo(() => {
+    const base = theme.scheme === 'dark' ? DarkTheme : DefaultTheme;
+    const { color } = theme;
+    return { ...base, colors: { ...base.colors, background: color.bg, card: color.bg, primary: color.accent, text: color.text, border: color.line } };
+  }, [theme]);
+
+  if (!ready) return null;
+
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.bg } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="playlist/[id]" />
+        <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="appearance" />
+      </Stack>
+    </NavigationThemeProvider>
   );
 }

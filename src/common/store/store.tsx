@@ -1,30 +1,39 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 
-import type { AuroraPreset } from '@/theme/tokens';
+import { defaultThemeId, themes, type ThemeId } from '@/common/theme/themes';
 
 import { demoPlaylists } from './demo';
 import type { Playlist, Source, Track } from './types';
 
 export type Backdrop =
-  | { kind: 'aurora'; preset: AuroraPreset }
+  | { kind: 'aurora'; preset: string }
   | { kind: 'photo'; uri: string }
   | { kind: 'album' };
+
+/** Kept on this device only until AnTik has accounts. */
+export type Profile = { name: string; photoUri?: string };
 
 type PlayerState = { queue: Track[]; index: number; playing: boolean; contextName?: string };
 
 type State = {
   hydrated: boolean;
+  themeId: ThemeId;
   backdrop: Backdrop;
+  profile: Profile;
   demoEnabled: boolean;
   connected: Partial<Record<Exclude<Source, 'demo'>, boolean>>;
   playlists: Playlist[];
   player: PlayerState;
 };
 
+type Saved = Partial<Pick<State, 'themeId' | 'backdrop' | 'profile' | 'demoEnabled'>>;
+
 type Action =
-  | { type: 'hydrate'; saved: Partial<Pick<State, 'backdrop' | 'demoEnabled'>> }
+  | { type: 'hydrate'; saved: Saved }
+  | { type: 'setTheme'; themeId: ThemeId }
   | { type: 'setBackdrop'; backdrop: Backdrop }
+  | { type: 'setProfile'; profile: Partial<Profile> }
   | { type: 'setDemo'; enabled: boolean }
   | { type: 'play'; queue: Track[]; index: number; contextName?: string }
   | { type: 'toggle' }
@@ -32,7 +41,9 @@ type Action =
 
 const initial: State = {
   hydrated: false,
-  backdrop: { kind: 'aurora', preset: 'dusk' },
+  themeId: defaultThemeId,
+  backdrop: { kind: 'aurora', preset: themes[defaultThemeId].defaultBackdrop },
+  profile: { name: '' },
   demoEnabled: true,
   connected: {},
   playlists: [],
@@ -41,10 +52,21 @@ const initial: State = {
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'hydrate':
-      return { ...state, ...action.saved, hydrated: true };
+    case 'hydrate': {
+      const next = { ...state, ...action.saved, hydrated: true };
+      // A theme saved by a newer or older build may not exist here.
+      if (!(next.themeId in themes)) next.themeId = defaultThemeId;
+      return next;
+    }
+    case 'setTheme': {
+      // Each theme has its own aurora set, so an aurora backdrop moves to the new theme's default.
+      const backdrop: Backdrop = state.backdrop.kind === 'aurora' ? { kind: 'aurora', preset: themes[action.themeId].defaultBackdrop } : state.backdrop;
+      return { ...state, themeId: action.themeId, backdrop };
+    }
     case 'setBackdrop':
       return { ...state, backdrop: action.backdrop };
+    case 'setProfile':
+      return { ...state, profile: { ...state.profile, ...action.profile } };
     case 'setDemo':
       return { ...state, demoEnabled: action.enabled };
     case 'play':
@@ -74,8 +96,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!state.hydrated) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ backdrop: state.backdrop, demoEnabled: state.demoEnabled })).catch(() => {});
-  }, [state.hydrated, state.backdrop, state.demoEnabled]);
+    const saved: Saved = { themeId: state.themeId, backdrop: state.backdrop, profile: state.profile, demoEnabled: state.demoEnabled };
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(saved)).catch(() => {});
+  }, [state.hydrated, state.themeId, state.backdrop, state.profile, state.demoEnabled]);
 
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

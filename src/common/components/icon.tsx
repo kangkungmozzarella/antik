@@ -1,8 +1,9 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
-import { color } from '@/theme/tokens';
+import { useTheme } from '@/common/theme/theme';
 
-// One small hand-drawn set with a single 1.8 stroke so every glyph reads as AnTik's own.
+// One small hand-drawn set so every glyph reads as AnTik's own. A theme can redraw any
+// glyph and sets the stroke weight for the whole set.
 const paths = {
   home: 'M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z',
   library: 'M5 4v16M9.5 4v16M14 5l4.5 14.5',
@@ -12,8 +13,9 @@ const paths = {
   next: 'M6 6l9 6-9 6zM18 6v12',
   prev: 'M18 6l-9 6 9 6zM6 6v12',
   back: 'M15 5l-7 7 7 7',
+  forward: 'M9 5l7 7-7 7',
   down: 'M6 9l6 6 6-6',
-  settings: 'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 3v2.2M12 18.8V21M4.2 7.5l1.9 1.1M17.9 15.4l1.9 1.1M4.2 16.5l1.9-1.1M17.9 8.6l1.9-1.1',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0',
   image: 'M4 6h16v12H4zM4 15l4.5-4.5 4 4 2.5-2.5L20 17',
   check: 'M5 12.5l4.5 4.5L19 7',
   external: 'M7 17 17 7M9 7h8v8',
@@ -22,18 +24,20 @@ const paths = {
 
 export type IconName = keyof typeof paths | 'vinyl';
 
-export function Icon({ name, size = 22, tint = color.text, filled = false }: { name: IconName; size?: number; tint?: string; filled?: boolean }) {
+export function Icon({ name, size = 22, tint, filled = false }: { name: IconName; size?: number; tint?: string; filled?: boolean }) {
+  const theme = useTheme();
+  const stroke = tint ?? theme.color.text;
   if (name === 'vinyl') {
     return (
-      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={tint} strokeWidth={1.8}>
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={theme.icon.stroke}>
         <Circle cx={12} cy={12} r={8.5} />
         <Circle cx={12} cy={12} r={2.2} />
       </Svg>
     );
   }
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? tint : 'none'} stroke={tint} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <Path d={paths[name]} />
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? stroke : 'none'} stroke={stroke} strokeWidth={theme.icon.stroke} strokeLinecap="round" strokeLinejoin="round">
+      <Path d={theme.icon.paths[name] ?? paths[name]} />
     </Svg>
   );
 }

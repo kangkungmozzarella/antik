@@ -5,6 +5,7 @@ export type Track = {
   source: Source;
   title: string;
   artist: string;
+  album?: string;
   durationMs?: number;
   artwork?: string;
   /** Opens the track in its own app or site; playback always goes through the source's player. */
@@ -19,6 +20,17 @@ export type Playlist = {
   owner: string;
   artwork?: string;
   tracks: Track[];
+};
+
+/** Something that happened in the app that the user may want to know about later. */
+export type Notice = {
+  id: string;
+  kind: 'playback' | 'service';
+  title: string;
+  body: string;
+  /** Epoch milliseconds. */
+  at: number;
+  read: boolean;
 };
 
 export const sourceLabel: Record<Source, string> = {

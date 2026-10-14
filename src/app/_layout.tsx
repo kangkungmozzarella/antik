@@ -7,8 +7,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 
 import { BrandSplash } from '@/common/components/brand-splash';
+import { PlaybackProvider } from '@/common/playback/playback';
 import { StoreProvider, useStore } from '@/common/store/store';
 import { ThemeProvider, useTheme } from '@/common/theme/theme';
+import { YouTubeEngineView } from '@/common/youtube/engine-view';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,7 +22,10 @@ export default function RootLayout() {
   return (
     <StoreProvider>
       <ThemeProvider>
-        <App fontsReady={fontsReady} />
+        <PlaybackProvider>
+          <App fontsReady={fontsReady} />
+          <YouTubeEngineView />
+        </PlaybackProvider>
       </ThemeProvider>
     </StoreProvider>
   );
@@ -49,6 +54,7 @@ function App({ fontsReady }: { fontsReady: boolean }) {
             <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="profile" />
             <Stack.Screen name="appearance" />
+            <Stack.Screen name="notifications" />
           </Stack>
         </NavigationThemeProvider>
       )}

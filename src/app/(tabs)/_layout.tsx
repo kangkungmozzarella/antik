@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
 
-import { TabBar } from '@/components/tab-bar';
-import { color } from '@/theme/tokens';
+import { TabBar } from '@/common/components/tab-bar';
+import { useTheme } from '@/common/theme/theme';
 
 export default function TabsLayout() {
+  const theme = useTheme();
   return (
-    <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: color.bg } }}>
+    <Tabs tabBar={(props) => <TabBar {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: theme.color.bg } }}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="library" options={{ title: 'Library' }} />
       <Tabs.Screen name="connect" options={{ title: 'Connect' }} />

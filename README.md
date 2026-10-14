@@ -25,6 +25,8 @@ npm run lint
 - **Library** dengan pencarian dan filter per sumber.
 - **Detail playlist** dan **Now Playing** dengan piringan hitam yang berputar hanya saat audio benar-benar diputar (diam jika "kurangi gerakan" aktif).
 - **Connect** untuk mengelola layanan yang terhubung.
+- **Profile** (avatar di pojok Home): nama dan foto yang disimpan di perangkat, pilihan tema, dan background.
+- **Tema** yang mengganti seluruh tampilan: warna, font, sudut, ikon, background, dan motif di Now Playing. Saat ini ada *Antik* (gelap, piringan hitam) dan *Puding* (krem, maskot puding buatan sendiri).
 - **Demo library**: playlist contoh supaya aplikasi bisa dicoba sebelum ada layanan yang terhubung. Semua item demo diberi label "Demo" dan tidak memiliki audio. Bisa dimatikan di Connect.
 
 ## Batasan per layanan
@@ -44,9 +46,26 @@ Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang meng
 
 ## Struktur
 
+Dibagi per fitur, mengikuti pola kurosim-mobile.
+
 ```text
-src/app/          Layar (Expo Router): (tabs)/ Home, Library, Connect; playlist/[id]; player; settings
-src/components/   Artwork, background, tab bar dan mini player, ikon, label sumber
-src/state/        Tipe data, store, dan demo library
-src/theme/        Token desain (warna, font, jarak)
+src/
+  app/                  Route Expo Router saja. Tiap file hanya meneruskan ke modulnya,
+                        misal profile.tsx → export { ProfileScreen as default } from '@/modules/profile'
+  modules/<fitur>/      main.screen.tsx, components/ khusus fitur itu, index.ts (export XxxScreen)
+                        home, library, connect, playlist, player, profile, appearance
+  common/
+    components/         Komponen bersama: teks, ikon, artwork, avatar, maskot, tab bar, dll.
+    store/              Store, tipe data, demo library
+    theme/              themes.ts (definisi tema), theme.tsx (useTheme, makeStyles), tokens.ts
+  utils/                images.ts (simpan foto), format.ts
 ```
+
+Layar baru: buat `src/modules/<fitur>/` dengan `main.screen.tsx` dan `index.ts`, lalu satu file route di `src/app/` yang meneruskan ke sana.
+
+### Menambah tema
+
+1. Tambahkan objek `Theme` baru di `src/common/theme/themes.ts` dan daftarkan di `themes`. TypeScript akan menandai field yang belum diisi.
+2. Glyph ikon yang ingin digambar ulang cukup ditulis di `icon.paths`; sisanya memakai set bawaan.
+3. Font baru dimuat di `src/app/_layout.tsx`.
+4. Di komponen, pakai `makeStyles((t) => ...)` atau `useTheme()`, jangan warna yang ditulis langsung.

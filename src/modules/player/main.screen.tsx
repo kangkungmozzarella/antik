@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -7,9 +8,11 @@ import { Artwork } from '@/common/components/artwork';
 import { Icon } from '@/common/components/icon';
 import { SourceBadge } from '@/common/components/source-badge';
 import { Body, Muted, Title } from '@/common/components/text';
+import { usePlayback } from '@/common/playback/playback';
 import { useNowPlaying, useStore } from '@/common/store/store';
 import { makeStyles, useTheme } from '@/common/theme/theme';
 import { space } from '@/common/theme/tokens';
+import { duration } from '@/utils/format';
 
 import { BobbingMascot } from './components/bobbing-mascot';
 import { Vinyl } from './components/vinyl';
@@ -23,6 +26,8 @@ export default function Player() {
   const theme = useTheme();
   const { state, dispatch } = useStore();
   const track = useNowPlaying();
+  const playback = usePlayback();
+  const [barWidth, setBarWidth] = useState(0);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -38,7 +43,10 @@ export default function Player() {
   }
 
   const demo = track.source === 'demo';
-  const moving = state.player.playing && !demo;
+  // The motif moves only while sound is actually coming out; the button follows what the user asked for.
+  const moving = playback.playing;
+  const wantsToPlay = state.player.playing && !demo;
+  const progress = playback.duration ? Math.min(playback.currentTime / playback.duration, 1) : 0;
   const cover = Math.min(width - space.xl * 2, 340) * 0.78;
   const { queue, index, contextName } = state.player;
   const { motif } = theme;
@@ -81,6 +89,27 @@ export default function Player() {
           <Muted>Track {index + 1} of {queue.length}</Muted>
         </View>
 
+        {!demo && (
+          <View style={styles.progress}>
+            <Pressable
+              onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+              onPress={(e) => barWidth && playback.phase === 'ready' && playback.seekTo((e.nativeEvent.locationX / barWidth) * playback.duration)}
+              accessibilityRole="adjustable"
+              accessibilityLabel="Song position"
+              accessibilityValue={{ min: 0, max: Math.round(playback.duration), now: Math.round(playback.currentTime) }}
+              hitSlop={{ top: 12, bottom: 12 }}
+              style={styles.bar}>
+              <View style={[styles.barFill, { width: `${progress * 100}%` }]} />
+            </Pressable>
+            <View style={styles.times}>
+              <Text style={styles.time}>{duration(playback.currentTime * 1000) || '0:00'}</Text>
+              <Text style={styles.time}>{duration(playback.duration * 1000)}</Text>
+            </View>
+            {playback.phase === 'loading' && <Muted>Finding the stream…</Muted>}
+            {playback.phase === 'error' && <Text style={styles.error} accessibilityLiveRegion="polite">Could not play this song. {playback.error}</Text>}
+          </View>
+        )}
+
         {demo && (
           <Muted style={styles.demoNote}>Demo track: there is no audio. Connect Spotify or YouTube to play your own music.</Muted>
         )}
@@ -92,10 +121,10 @@ export default function Player() {
           <Pressable
             onPress={() => dispatch({ type: 'toggle' })}
             disabled={demo}
-            accessibilityLabel={demo ? 'Play (unavailable for demo tracks)' : moving ? 'Pause' : 'Play'}
+            accessibilityLabel={demo ? 'Play (unavailable for demo tracks)' : wantsToPlay ? 'Pause' : 'Play'}
             accessibilityState={{ disabled: demo }}
             style={[styles.mainButton, demo && styles.disabled]}>
-            <Icon name={moving ? 'pause' : 'play'} size={30} tint={theme.color.accentInk} filled={!moving} />
+            <Icon name={wantsToPlay ? 'pause' : 'play'} size={30} tint={theme.color.accentInk} filled={!wantsToPlay} />
           </Pressable>
           <Pressable onPress={() => dispatch({ type: 'skip', by: 1 })} accessibilityLabel="Next track" hitSlop={8} style={styles.sideButton}>
             <Icon name="next" size={26} />
@@ -120,6 +149,12 @@ const useStyles = makeStyles((t) => ({
   sleeve: { alignSelf: 'flex-start', shadowColor: '#000', shadowOpacity: t.scheme === 'dark' ? 0.45 : 0.18, shadowRadius: 24, shadowOffset: { width: 8, height: 12 }, elevation: 12 },
   meta: { gap: space.sm },
   artist: { fontSize: 17, color: t.color.textSoft },
+  progress: { gap: space.xs },
+  bar: { height: 4, borderRadius: 2, backgroundColor: t.color.surfaceStrong, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: t.color.accentSoft },
+  times: { flexDirection: 'row', justifyContent: 'space-between' },
+  time: { ...t.text.body, fontSize: 12, color: t.color.textMuted, fontVariant: ['tabular-nums'] },
+  error: { ...t.text.body, fontSize: 13, color: t.color.danger },
   demoNote: { padding: space.md, borderRadius: t.radius.md, backgroundColor: t.color.surface, color: t.color.textSoft },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xxl, marginTop: 'auto' },
   sideButton: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },

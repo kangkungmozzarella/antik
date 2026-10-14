@@ -29,6 +29,26 @@ npm run lint
 - **Tema** yang mengganti seluruh tampilan: warna, font, sudut, ikon, background, dan motif di Now Playing. Saat ini ada *Antik* (gelap, piringan hitam) dan *Puding* (krem, maskot puding buatan sendiri).
 - **Demo library**: playlist contoh supaya aplikasi bisa dicoba sebelum ada layanan yang terhubung. Semua item demo diberi label "Demo" dan tidak memiliki audio. Bisa dimatikan di Connect.
 
+## Prototipe: streaming YouTube Music (branch `proto/youtube-music`)
+
+Tab **Search** mencari lagu di YouTube Music dan memutarnya utuh di player AnTik sendiri, dengan cara yang sama seperti [BitChord](https://github.com/kushagrasinghx/BitChord). BitChord hanya dipakai sebagai referensi cara kerja; kodenya tidak disalin karena berlisensi GPLv3.
+
+**Ini tidak sesuai ketentuan YouTube dan tidak bisa dirilis di Google Play.** Hanya untuk dicoba sendiri atau dibagikan sebagai APK. YouTube sering mengubah proteksinya, jadi bagian ini bisa berhenti bekerja kapan saja.
+
+Cara kerja:
+
+1. `src/common/youtube/client.ts` memakai `youtubei.js` untuk search dan meminta URL audio. Client YTMUSIC, MWEB, dan WEB dicoba berurutan, karena tiap client ditolak untuk sebagian lagu.
+2. Tanpa PoToken, googlevideo hanya mengirim 1 MB pertama (±1 menit). PoToken dibuat oleh BotGuard milik Google yang berjalan di WebView tersembunyi (`engine-view.tsx`, script di `scripts/youtube-engine/entry.js`). Request ke Google (`/api/jnn/v1/Create` dan `GenerateIT`) dikirim dari sisi aplikasi (`potoken.ts`), bukan dari WebView, karena WebView Android menandai request-nya dan Google lalu menahan token.
+3. Kode dekripsi URL dari player YouTube juga dijalankan di WebView, bukan di runtime aplikasi.
+4. `src/common/playback/playback.tsx` memutar URL itu dengan `expo-audio` dan pindah ke lagu berikutnya otomatis.
+
+Setelah mengubah `scripts/youtube-engine/entry.js`, jalankan `npm run build:youtube-engine`.
+
+Belum ada:
+- Kontrol lock screen dan pemutaran di background hanya jalan di development build (`npx expo run:android`), tidak di Expo Go.
+- Sebagian lagu meminta login dan belum bisa diputar.
+- Belum ada download offline atau cache.
+
 ## Batasan per layanan
 
 Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang mengizinkan aplikasi lain mengambil file audionya.

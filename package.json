@@ -43,6 +43,7 @@
     "youtubei.js": "^18.1.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/react": "~19.2.2",
     "esbuild": "^0.28.2",
     "eslint": "^9.0.0",
@@ -51,12 +52,13 @@
   },
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "build:youtube-engine": "node scripts/youtube-engine/build.mjs"
+    "build:youtube-engine": "node scripts/youtube-engine/build.mjs",
+    "build:brand": "node scripts/brand/render.mjs"
   },
   "private": true
 }

@@ -61,8 +61,13 @@ Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang meng
 
 1. Login Spotify (PKCE lewat `expo-auth-session`) dan impor playlist.
 2. Login Google untuk YouTube dan impor playlist, dengan pemutaran lewat player YouTube.
-3. Ikon dan identitas aplikasi.
-4. Build Android lewat EAS untuk pengujian internal di Google Play.
+3. Build Android lewat EAS untuk pengujian internal di Google Play.
+
+## Ikon dan splash
+
+Semua ikon (ikon aplikasi, adaptive icon Android, ikon monokrom Android 13, splash, favicon) digambar dari satu sumber, `scripts/brand/render.mjs`: piringan hitam bertema Antik dengan label lavender berhuruf A. Setelah mengubahnya, jalankan `npm run build:brand`.
+
+Expo Go selalu memakai ikonnya sendiri. Untuk melihat ikon dan splash yang sebenarnya, pakai development build: `npx expo run:android`.
 
 ## Struktur
 

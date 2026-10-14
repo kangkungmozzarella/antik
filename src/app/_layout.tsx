@@ -4,8 +4,9 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvide
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 
+import { BrandSplash } from '@/common/components/brand-splash';
 import { StoreProvider, useStore } from '@/common/store/store';
 import { ThemeProvider, useTheme } from '@/common/theme/theme';
 
@@ -31,28 +32,28 @@ function App({ fontsReady }: { fontsReady: boolean }) {
   // Wait for saved settings too, so the app never flashes the default theme first.
   const ready = fontsReady && state.hydrated;
 
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
-  }, [ready]);
-
   const navigationTheme = useMemo(() => {
     const base = theme.scheme === 'dark' ? DarkTheme : DefaultTheme;
     const { color } = theme;
     return { ...base, colors: { ...base.colors, background: color.bg, card: color.bg, primary: color.accent, text: color.text, border: color.line } };
   }, [theme]);
 
-  if (!ready) return null;
-
   return (
-    <NavigationThemeProvider value={navigationTheme}>
-      <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.bg } }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="playlist/[id]" />
-        <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="appearance" />
-      </Stack>
-    </NavigationThemeProvider>
+    <>
+      {ready && (
+        <NavigationThemeProvider value={navigationTheme}>
+          <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.bg } }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="playlist/[id]" />
+            <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="appearance" />
+          </Stack>
+        </NavigationThemeProvider>
+      )}
+      {/* Covers the app until it is ready, then fades to reveal it. */}
+      <BrandSplash appReady={ready} />
+    </>
   );
 }

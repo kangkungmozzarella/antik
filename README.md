@@ -41,8 +41,19 @@ Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang meng
 
 1. Login Spotify (PKCE lewat `expo-auth-session`) dan impor playlist.
 2. Login Google untuk YouTube dan impor playlist, dengan pemutaran lewat player YouTube.
-3. Ikon dan identitas aplikasi.
-4. Build Android lewat EAS untuk pengujian internal di Google Play.
+3. Build Android lewat EAS untuk pengujian internal di Google Play.
+
+## Ikon dan splash
+
+Desain sumbernya ada di `assets/brand/`: `antik-icon.png` (huruf A pita teal) dan `antik-splash.png` (splash layar penuh). Semua aset turunan dibuat dari dua file itu dengan `npm run build:brand` (`scripts/brand/render.mjs`):
+
+- ikon aplikasi, adaptive icon Android, ikon monokrom Android 13, dan favicon. Huruf A diangkat dari kartunya lalu ditaruh di latar penuh, karena Android dan iOS memotong ikon dengan bentuknya sendiri.
+- `splash-icon.png`: huruf A saja, untuk splash native.
+- `splash.png`: desain splash penuh, ditampilkan oleh `BrandSplash` di dalam aplikasi. Android 12 ke atas hanya mengizinkan ikon di tengah untuk splash native, jadi splash native menampilkan A di atas warna latar yang sama (`#040c11`), lalu langsung diganti desain penuh yang memudar saat aplikasi siap.
+
+Untuk mengganti desain, timpa file di `assets/brand/` dengan nama yang sama, lalu jalankan `npm run build:brand`.
+
+Expo Go selalu memakai ikonnya sendiri. Untuk melihat ikon dan splash yang sebenarnya, pakai development build: `npx expo run:android`.
 
 ## Struktur
 

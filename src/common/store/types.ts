@@ -22,6 +22,17 @@ export type Playlist = {
   tracks: Track[];
 };
 
+/** Something that happened in the app that the user may want to know about later. */
+export type Notice = {
+  id: string;
+  kind: 'playback' | 'service';
+  title: string;
+  body: string;
+  /** Epoch milliseconds. */
+  at: number;
+  read: boolean;
+};
+
 export const sourceLabel: Record<Source, string> = {
   spotify: 'Spotify',
   youtube: 'YouTube',

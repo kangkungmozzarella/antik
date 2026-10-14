@@ -5,6 +5,7 @@ export type Track = {
   source: Source;
   title: string;
   artist: string;
+  album?: string;
   durationMs?: number;
   artwork?: string;
   /** Opens the track in its own app or site; playback always goes through the source's player. */

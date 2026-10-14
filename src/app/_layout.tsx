@@ -4,17 +4,15 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvide
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo } from 'react';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { useMemo } from 'react';
 
+import { BrandSplash } from '@/common/components/brand-splash';
 import { PlaybackProvider } from '@/common/playback/playback';
 import { StoreProvider, useStore } from '@/common/store/store';
 import { ThemeProvider, useTheme } from '@/common/theme/theme';
 import { YouTubeEngineView } from '@/common/youtube/engine-view';
 
 SplashScreen.preventAutoHideAsync();
-// The native splash fades out while the app fades in underneath (iOS; Android cuts).
-SplashScreen.setOptions({ duration: 300, fade: true });
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({ Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, Fredoka_400Regular, Fredoka_600SemiBold, Fredoka_700Bold });
@@ -39,31 +37,28 @@ function App({ fontsReady }: { fontsReady: boolean }) {
   // Wait for saved settings too, so the app never flashes the default theme first.
   const ready = fontsReady && state.hydrated;
 
-  useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
-  }, [ready]);
-
   const navigationTheme = useMemo(() => {
     const base = theme.scheme === 'dark' ? DarkTheme : DefaultTheme;
     const { color } = theme;
     return { ...base, colors: { ...base.colors, background: color.bg, card: color.bg, primary: color.accent, text: color.text, border: color.line } };
   }, [theme]);
 
-  if (!ready) return null;
-
   return (
-    <NavigationThemeProvider value={navigationTheme}>
-      <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
-      {/* Fades in from the splash's night indigo instead of cutting to the first frame. */}
-      <Animated.View entering={FadeIn.duration(250)} style={{ flex: 1, backgroundColor: theme.color.bg }}>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.bg } }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="playlist/[id]" />
-          <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="appearance" />
-        </Stack>
-      </Animated.View>
-    </NavigationThemeProvider>
+    <>
+      {ready && (
+        <NavigationThemeProvider value={navigationTheme}>
+          <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.bg } }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="playlist/[id]" />
+            <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="appearance" />
+          </Stack>
+        </NavigationThemeProvider>
+      )}
+      {/* Covers the app until it is ready, then fades to reveal it. */}
+      <BrandSplash appReady={ready} />
+    </>
   );
 }

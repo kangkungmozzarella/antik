@@ -1,6 +1,6 @@
 # AnTik
 
-Aplikasi musik yang mengumpulkan playlist dari beberapa layanan (Spotify, YouTube dan YouTube Music, lalu Apple Music) ke satu tempat, dengan tampilan yang bisa kamu atur sendiri. Dibuat dengan React Native, Expo, dan TypeScript, dengan target Android (Google Play) dan versi web.
+Aplikasi musik pribadi: cari dan putar lagu dari YouTube Music di player AnTik sendiri, dengan tampilan yang bisa kamu atur sendiri. Dibuat dengan React Native, Expo, dan TypeScript, untuk Android (dibagikan sebagai APK, bukan lewat Google Play) dan versi web.
 
 ## Menjalankan
 
@@ -21,53 +21,47 @@ npm run lint
 
 ## Yang sudah ada
 
-- **Home** dengan background yang bisa diganti: empat preset aurora, foto dari galeri, atau cover lagu yang sedang diputar (diburamkan).
+- **Search**: cari lagu di YouTube Music dan putar utuh di player AnTik, termasuk lanjut otomatis ke lagu berikutnya.
+- **Home**:
+  - background yang bisa diganti (aurora, foto dari galeri, atau cover lagu yang sedang diputar)
+  - **Baru diputar**: grid 2 kolom dari 30 lagu terakhir yang diputar, disimpan di HP
+  - **chip filter** All / Songs / Playlists
+  - section dari home feed YouTube Music (Quick picks, playlist trending, dan lainnya), mengikuti wilayah HP
+  - **lonceng notifikasi** dengan badge
+- **Notifikasi**: kejadian nyata di aplikasi, saat ini lagu yang gagal diputar beserta alasannya. Disimpan di HP; belum ada notifikasi dari server.
+- **Detail playlist dan album**: dari library atau dari YouTube Music (`/playlist/yt:playlist:<id>`, `/playlist/yt:album:<id>`).
+- **Now Playing**: progress bar yang bisa di-tap untuk lompat. Motifnya (piringan hitam atau maskot) hanya bergerak saat audio benar-benar berbunyi, dan diam jika "kurangi gerakan" aktif.
 - **Library** dengan pencarian dan filter per sumber.
-- **Detail playlist** dan **Now Playing** dengan piringan hitam yang berputar hanya saat audio benar-benar diputar (diam jika "kurangi gerakan" aktif).
 - **Connect** untuk mengelola layanan yang terhubung.
-- **Profile** (avatar di pojok Home): nama dan foto yang disimpan di perangkat, pilihan tema, dan background.
+- **Profile** (avatar di pojok Home): nama dan foto yang disimpan di HP, pilihan tema, dan background.
 - **Tema** yang mengganti seluruh tampilan: warna, font, sudut, ikon, background, dan motif di Now Playing. Saat ini ada *Antik* (gelap, piringan hitam) dan *Puding* (krem, maskot puding buatan sendiri).
-- **Demo library**: playlist contoh supaya aplikasi bisa dicoba sebelum ada layanan yang terhubung. Semua item demo diberi label "Demo" dan tidak memiliki audio. Bisa dimatikan di Connect.
+- **Demo library**: playlist contoh berlabel "Demo" tanpa audio. Bisa dimatikan di Connect.
 
-## Prototipe: streaming YouTube Music (branch `proto/youtube-music`)
+## Streaming YouTube Music
 
-Tab **Search** mencari lagu di YouTube Music dan memutarnya utuh di player AnTik sendiri, dengan cara yang sama seperti [BitChord](https://github.com/kushagrasinghx/BitChord). BitChord hanya dipakai sebagai referensi cara kerja; kodenya tidak disalin karena berlisensi GPLv3.
+AnTik memutar lagu dari YouTube Music dengan cara yang sama seperti [BitChord](https://github.com/kushagrasinghx/BitChord). BitChord hanya dipakai sebagai referensi cara kerja; kodenya tidak disalin karena berlisensi GPLv3.
 
-**Ini tidak sesuai ketentuan YouTube dan tidak bisa dirilis di Google Play.** Hanya untuk dicoba sendiri atau dibagikan sebagai APK. YouTube sering mengubah proteksinya, jadi bagian ini bisa berhenti bekerja kapan saja.
+**Ini memakai API privat YouTube dan tidak sesuai ketentuan YouTube**, jadi AnTik tidak bisa dirilis di Google Play. AnTik dipakai sendiri dan dibagikan sebagai APK. YouTube sering mengubah proteksinya, jadi bagian ini bisa berhenti bekerja kapan saja.
 
 Cara kerja:
 
-1. `src/common/youtube/client.ts` memakai `youtubei.js` untuk search dan meminta URL audio. Client YTMUSIC, MWEB, dan WEB dicoba berurutan, karena tiap client ditolak untuk sebagian lagu.
+1. `src/common/youtube/client.ts` memakai `youtubei.js` untuk search, home feed, playlist, album, dan meminta URL audio. Client YTMUSIC, MWEB, dan WEB dicoba berurutan, karena tiap client ditolak untuk sebagian lagu.
 2. Tanpa PoToken, googlevideo hanya mengirim 1 MB pertama (±1 menit). PoToken dibuat oleh BotGuard milik Google yang berjalan di WebView tersembunyi (`engine-view.tsx`, script di `scripts/youtube-engine/entry.js`). Request ke Google (`/api/jnn/v1/Create` dan `GenerateIT`) dikirim dari sisi aplikasi (`potoken.ts`), bukan dari WebView, karena WebView Android menandai request-nya dan Google lalu menahan token.
 3. Kode dekripsi URL dari player YouTube juga dijalankan di WebView, bukan di runtime aplikasi.
 4. `src/common/playback/playback.tsx` memutar URL itu dengan `expo-audio` dan pindah ke lagu berikutnya otomatis.
 
-Home di branch ini juga memakai YouTube Music:
-- **Baru diputar**: grid 2 kolom dari riwayat putar (30 lagu terakhir, disimpan di HP).
-- **Chip filter** All / Songs / Playlists.
-- **Section dari home feed YouTube Music** (Quick picks, playlist trending, dan lainnya), mengikuti wilayah HP. Tanpa wilayah Indonesia, Quick picks tidak dikirim. Playlist dan album bisa dibuka (`/playlist/yt:playlist:<id>`) dan diputar.
-- **Notifikasi**: lonceng dengan badge di header. Isinya kejadian nyata di aplikasi, saat ini lagu yang gagal diputar. Disimpan di HP; belum ada notifikasi dari server.
-
 Setelah mengubah `scripts/youtube-engine/entry.js`, jalankan `npm run build:youtube-engine`.
 
-Belum ada:
-- Kontrol lock screen dan pemutaran di background hanya jalan di development build (`npx expo run:android`), tidak di Expo Go.
+Batasan:
+- Kontrol lock screen dan pemutaran di background hanya jalan di development build atau APK (`npx expo run:android`), tidak di Expo Go.
 - Sebagian lagu meminta login dan belum bisa diputar.
+- Tanpa wilayah Indonesia di setelan HP, YouTube Music tidak mengirim Quick picks.
 - Belum ada download offline atau cache.
-
-## Batasan per layanan
-
-Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang mengizinkan aplikasi lain mengambil file audionya.
-
-- **Spotify**: playlist bisa dibaca lewat Spotify Web API. Pemutaran penuh butuh Spotify Premium. Aplikasi di Spotify Developer awalnya dibatasi untuk pengguna yang didaftarkan manual; cek Spotify Developer Policy sebelum rilis publik.
-- **YouTube / YouTube Music**: playlist dibaca lewat YouTube Data API. YouTube Music tidak punya API resmi; playlist-nya dibaca sebagai playlist YouTube. Pemutaran harus memakai player YouTube yang terlihat (tidak boleh audio di background) agar sesuai ketentuan YouTube dan Google Play.
-- **Apple Music**: butuh Apple Developer Program dan langganan Apple Music. Direncanakan untuk tahap berikutnya.
 
 ## Rencana berikutnya
 
-1. Login Spotify (PKCE lewat `expo-auth-session`) dan impor playlist.
-2. Login Google untuk YouTube dan impor playlist, dengan pemutaran lewat player YouTube.
-3. Build Android lewat EAS untuk pengujian internal di Google Play.
+1. Login Spotify (PKCE lewat `expo-auth-session`) untuk mengimpor playlist, yang lalu diputar lewat YouTube Music.
+2. Build APK lewat EAS (`eas build --profile preview`) untuk dipasang di HP sendiri.
 
 ## Ikon dan splash
 

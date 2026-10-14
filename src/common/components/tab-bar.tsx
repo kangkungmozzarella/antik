@@ -10,7 +10,7 @@ import { space } from '@/common/theme/tokens';
 import { Artwork } from './artwork';
 import { Icon, type IconName } from './icon';
 
-const tabIcons: Record<string, IconName> = { index: 'home', library: 'library', connect: 'link' };
+const tabIcons: Record<string, IconName> = { index: 'home', search: 'search', library: 'library', connect: 'link' };
 
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const styles = useStyles();

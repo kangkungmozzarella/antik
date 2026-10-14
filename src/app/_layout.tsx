@@ -6,8 +6,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo } from 'react';
 
+import { PlaybackProvider } from '@/common/playback/playback';
 import { StoreProvider, useStore } from '@/common/store/store';
 import { ThemeProvider, useTheme } from '@/common/theme/theme';
+import { YouTubeEngineView } from '@/common/youtube/engine-view';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,7 +21,10 @@ export default function RootLayout() {
   return (
     <StoreProvider>
       <ThemeProvider>
-        <App fontsReady={fontsReady} />
+        <PlaybackProvider>
+          <App fontsReady={fontsReady} />
+          <YouTubeEngineView />
+        </PlaybackProvider>
       </ThemeProvider>
     </StoreProvider>
   );

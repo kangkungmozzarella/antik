@@ -52,7 +52,7 @@ export default function Search() {
     <Screen keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       <View style={styles.head}>
         <Title>Search</Title>
-        <Muted>Songs from YouTube Music. Prototype: this uses YouTube’s private API and may stop working at any time.</Muted>
+        <Muted>Songs from YouTube Music, through YouTube’s private API, so it can stop working whenever YouTube changes it.</Muted>
       </View>
 
       <View style={styles.search}>

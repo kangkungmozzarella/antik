@@ -1,7 +1,8 @@
 // youtubei.js builds URLs with URLSearchParams setters that React Native's URL lacks.
 import 'react-native-url-polyfill/auto';
 
-import { ClientType, Innertube, Platform } from 'youtubei.js';
+import { getLocales } from 'expo-localization';
+import { ClientType, Innertube, Platform, YTNodes } from 'youtubei.js';
 
 import type { Track } from '@/common/store/types';
 
@@ -32,7 +33,9 @@ const PLAYER_CLIENTS = ['YTMUSIC', 'MWEB', 'WEB'] as const;
 let session: Promise<Innertube> | null = null;
 
 function innertube() {
-  session ??= Innertube.create({ client_type: ClientType.MUSIC, retrieve_player: true, generate_session_locally: true }).catch((error) => {
+  // YouTube Music shapes the home feed by country (no Quick picks without one), so use the phone's region.
+  const region = getLocales()[0]?.regionCode ?? undefined;
+  session ??= Innertube.create({ client_type: ClientType.MUSIC, retrieve_player: true, generate_session_locally: true, ...(region ? { location: region } : {}) }).catch((error) => {
     // Let the next call try again instead of caching the failure.
     session = null;
     throw error;
@@ -45,22 +48,88 @@ function largeArtwork(url?: string) {
   return url?.replace(/=w\d+-h\d+/, '=w544-h544');
 }
 
+/** A song or music video row as a Track; anything else (artists, episodes…) is skipped. */
+function toTrack(item: YTNodes.MusicResponsiveListItem, fallback?: { artist?: string; album?: string; artwork?: string }): Track[] {
+  if (!item.id || !item.title || (item.item_type !== 'song' && item.item_type !== 'video')) return [];
+  const people = item.artists?.length ? item.artists : item.authors;
+  return [{
+    id: `youtube-${item.id}`,
+    source: 'youtube',
+    youtubeVideoId: item.id,
+    title: item.title,
+    artist: people?.map((person) => person.name).join(', ') || fallback?.artist || 'Unknown artist',
+    album: item.album?.name ?? fallback?.album,
+    durationMs: item.duration?.seconds ? item.duration.seconds * 1000 : undefined,
+    artwork: largeArtwork(item.thumbnail?.contents?.[0]?.url) ?? fallback?.artwork,
+  }];
+}
+
 export async function searchSongs(query: string): Promise<Track[]> {
   const yt = await innertube();
   const result = await yt.music.search(query, { type: 'song' });
-  return (result.songs?.contents ?? []).flatMap((item) => {
-    if (!item.id || !item.title) return [];
-    return [{
-      id: `youtube-${item.id}`,
-      source: 'youtube' as const,
-      youtubeVideoId: item.id,
-      title: item.title,
-      artist: item.artists?.map((artist) => artist.name).join(', ') || 'Unknown artist',
-      album: item.album?.name,
-      durationMs: item.duration?.seconds ? item.duration.seconds * 1000 : undefined,
-      artwork: largeArtwork(item.thumbnail?.contents?.[0]?.url),
-    }];
+  return (result.songs?.contents ?? []).flatMap((item) => toTrack(item));
+}
+
+/** A YouTube Music playlist or album, opened as `/playlist/yt:<kind>:<id>`. */
+export type Collection = { id: string; kind: 'playlist' | 'album'; title: string; subtitle?: string; artwork?: string };
+export type FeedSection = { title: string; songs: Track[]; collections: Collection[] };
+
+export const collectionRouteId = (collection: Pick<Collection, 'kind' | 'id'>) => `yt:${collection.kind}:${collection.id}`;
+
+export function parseCollectionRouteId(routeId: string): Pick<Collection, 'kind' | 'id'> | null {
+  const match = /^yt:(playlist|album):(.+)$/.exec(routeId);
+  return match ? { kind: match[1] as Collection['kind'], id: match[2] } : null;
+}
+
+function toCollection(item: YTNodes.MusicTwoRowItem): Collection[] {
+  if (!item.id || (item.item_type !== 'playlist' && item.item_type !== 'album')) return [];
+  return [{
+    // Browse ids of playlists carry a VL prefix that the playlist endpoint does not want.
+    id: item.item_type === 'playlist' ? item.id.replace(/^VL/, '') : item.id,
+    kind: item.item_type,
+    title: item.title.toString(),
+    subtitle: item.subtitle?.toString(),
+    artwork: item.thumbnail?.[0]?.url,
+  }];
+}
+
+/**
+ * The YouTube Music home page without an account: Quick picks, trending playlists and so on.
+ * Shelves of artists, videos or episodes are left out.
+ */
+export async function getHomeFeed(): Promise<FeedSection[]> {
+  const yt = await innertube();
+  const feed = await yt.music.getHomeFeed();
+  return (feed.sections ?? []).flatMap((section) => {
+    if (!section.is(YTNodes.MusicCarouselShelf)) return [];
+    const songs: Track[] = [];
+    const collections: Collection[] = [];
+    for (const item of section.contents) {
+      if (item.is(YTNodes.MusicResponsiveListItem)) songs.push(...toTrack(item));
+      else if (item.is(YTNodes.MusicTwoRowItem)) collections.push(...toCollection(item));
+    }
+    const title = section.header?.title?.toString() ?? '';
+    return title && (songs.length || collections.length) ? [{ title, songs, collections }] : [];
   });
+}
+
+export type CollectionPage = { title: string; subtitle?: string; detail?: string; artwork?: string; tracks: Track[] };
+
+export async function getCollection({ kind, id }: Pick<Collection, 'kind' | 'id'>): Promise<CollectionPage> {
+  const yt = await innertube();
+  const page = kind === 'album' ? await yt.music.getAlbum(id) : await yt.music.getPlaylist(id);
+  const header = page.header?.is(YTNodes.MusicResponsiveHeader) ? page.header : undefined;
+  const artwork = largeArtwork(header?.thumbnail?.contents?.[0]?.url);
+  // Album rows name no artist and have no cover of their own; they share the album's.
+  const fallback = { artist: header?.strapline_text_one?.toString(), album: kind === 'album' ? header?.title?.toString() : undefined, artwork };
+  const rows = kind === 'album' ? (page as Awaited<ReturnType<typeof yt.music.getAlbum>>).contents : (page as Awaited<ReturnType<typeof yt.music.getPlaylist>>).items;
+  return {
+    title: header?.title?.toString() ?? 'Untitled',
+    subtitle: header?.subtitle?.toString(),
+    detail: header?.second_subtitle?.toString() || header?.strapline_text_one?.toString(),
+    artwork,
+    tracks: (rows ?? []).flatMap((row) => (row.is(YTNodes.MusicResponsiveListItem) ? toTrack(row, fallback) : [])),
+  };
 }
 
 export class StreamUnavailableError extends Error {}

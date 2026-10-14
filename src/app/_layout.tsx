@@ -54,6 +54,7 @@ function App({ fontsReady }: { fontsReady: boolean }) {
             <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="profile" />
             <Stack.Screen name="appearance" />
+            <Stack.Screen name="notifications" />
           </Stack>
         </NavigationThemeProvider>
       )}

@@ -42,6 +42,12 @@ Cara kerja:
 3. Kode dekripsi URL dari player YouTube juga dijalankan di WebView, bukan di runtime aplikasi.
 4. `src/common/playback/playback.tsx` memutar URL itu dengan `expo-audio` dan pindah ke lagu berikutnya otomatis.
 
+Home di branch ini juga memakai YouTube Music:
+- **Baru diputar**: grid 2 kolom dari riwayat putar (30 lagu terakhir, disimpan di HP).
+- **Chip filter** All / Songs / Playlists.
+- **Section dari home feed YouTube Music** (Quick picks, playlist trending, dan lainnya), mengikuti wilayah HP. Tanpa wilayah Indonesia, Quick picks tidak dikirim. Playlist dan album bisa dibuka (`/playlist/yt:playlist:<id>`) dan diputar.
+- **Notifikasi**: lonceng dengan badge di header. Isinya kejadian nyata di aplikasi, saat ini lagu yang gagal diputar. Disimpan di HP; belum ada notifikasi dari server.
+
 Setelah mengubah `scripts/youtube-engine/entry.js`, jalankan `npm run build:youtube-engine`.
 
 Belum ada:

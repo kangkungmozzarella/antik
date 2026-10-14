@@ -2,8 +2,8 @@ import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-au
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { useNowPlaying, useStore } from '@/common/store/store';
-import { resolveStream } from '@/common/youtube/client';
+import { makeNotice, useNowPlaying, useStore } from '@/common/store/store';
+import { resolveStream, StreamUnavailableError } from '@/common/youtube/client';
 
 type Phase = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -58,7 +58,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         setResolved({ trackId: track.id, phase: 'ready' });
       })
       .catch((error: unknown) => {
-        if (!cancelled) setResolved({ trackId: track.id, phase: 'error', error: error instanceof Error ? error.message : String(error) });
+        if (cancelled) return;
+        const reason = error instanceof StreamUnavailableError
+          ? 'YouTube would not stream it. Some songs need a signed-in account or are not available here.'
+          : 'Check your connection and try again.';
+        // The technical detail goes to the dev log; people get the reason.
+        console.warn(`[playback] ${track.title}: ${error instanceof Error ? error.message : String(error)}`);
+        setResolved({ trackId: track.id, phase: 'error', error: reason });
+        dispatch({ type: 'notify', notice: makeNotice('playback', `Couldn’t play “${track.title}”`, reason) });
       });
     return () => {
       cancelled = true;
@@ -82,8 +89,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     error: load.error,
     playing: load.phase === 'ready' && status.playing,
     buffering: load.phase === 'loading' || (load.phase === 'ready' && status.isBuffering),
-    currentTime: status.currentTime,
-    duration: status.duration || (track?.durationMs ?? 0) / 1000,
+    // Until this song's stream is loaded, the player still holds the previous song's position.
+    currentTime: load.phase === 'ready' ? status.currentTime : 0,
+    duration: (load.phase === 'ready' && status.duration) || (track?.durationMs ?? 0) / 1000,
     seekTo: (seconds) => {
       player.seekTo(seconds).catch(() => {});
     },

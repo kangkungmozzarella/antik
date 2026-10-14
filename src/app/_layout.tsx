@@ -1,18 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { Fraunces_600SemiBold, Fraunces_600SemiBold_Italic, useFonts } from '@expo-google-fonts/fraunces';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { StoreProvider } from '@/state/store';
+import { color } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const theme = { ...DarkTheme, colors: { ...DarkTheme.colors, background: color.bg, card: color.bg, primary: color.accent, text: color.text, border: color.line } };
+
+export default function RootLayout() {
+  const [loaded, error] = useFonts({ Fraunces_600SemiBold, Fraunces_600SemiBold_Italic });
+
+  // Hide the splash once fonts are ready, or if they fail (the system serif takes over).
+  useEffect(() => {
+    if (loaded || error) SplashScreen.hideAsync();
+  }, [loaded, error]);
+  if (!loaded && !error) return null;
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <StoreProvider>
+      <ThemeProvider value={theme}>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.bg } }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="playlist/[id]" />
+          <Stack.Screen name="player" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="settings" />
+        </Stack>
+      </ThemeProvider>
+    </StoreProvider>
   );
 }

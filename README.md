@@ -1,56 +1,52 @@
-# Welcome to your Expo app 👋
+# AnTik
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplikasi musik yang mengumpulkan playlist dari beberapa layanan (Spotify, YouTube dan YouTube Music, lalu Apple Music) ke satu tempat, dengan tampilan yang bisa kamu atur sendiri. Dibuat dengan React Native, Expo, dan TypeScript, dengan target Android (Google Play) dan versi web.
 
-## Get started
+## Menjalankan
 
-1. Install dependencies
+Butuh Node.js 20 atau lebih baru.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+npm install
+npm start          # lalu tekan a (Android), w (web), atau scan QR dengan Expo Go
+npm run web        # langsung buka versi web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Pemeriksaan sebelum commit:
 
-### Other setup steps
+```sh
+npm run typecheck
+npm run lint
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Yang sudah ada
 
-## Learn more
+- **Home** dengan background yang bisa diganti: empat preset aurora, foto dari galeri, atau cover lagu yang sedang diputar (diburamkan).
+- **Library** dengan pencarian dan filter per sumber.
+- **Detail playlist** dan **Now Playing** dengan piringan hitam yang berputar hanya saat audio benar-benar diputar (diam jika "kurangi gerakan" aktif).
+- **Connect** untuk mengelola layanan yang terhubung.
+- **Demo library**: playlist contoh supaya aplikasi bisa dicoba sebelum ada layanan yang terhubung. Semua item demo diberi label "Demo" dan tidak memiliki audio. Bisa dimatikan di Connect.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Batasan per layanan
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Lagu selalu diputar lewat player resmi tiap layanan; tidak ada layanan yang mengizinkan aplikasi lain mengambil file audionya.
 
-## Join the community
+- **Spotify**: playlist bisa dibaca lewat Spotify Web API. Pemutaran penuh butuh Spotify Premium. Aplikasi di Spotify Developer awalnya dibatasi untuk pengguna yang didaftarkan manual; cek Spotify Developer Policy sebelum rilis publik.
+- **YouTube / YouTube Music**: playlist dibaca lewat YouTube Data API. YouTube Music tidak punya API resmi; playlist-nya dibaca sebagai playlist YouTube. Pemutaran harus memakai player YouTube yang terlihat (tidak boleh audio di background) agar sesuai ketentuan YouTube dan Google Play.
+- **Apple Music**: butuh Apple Developer Program dan langganan Apple Music. Direncanakan untuk tahap berikutnya.
 
-Join our community of developers creating universal apps.
+## Rencana berikutnya
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Login Spotify (PKCE lewat `expo-auth-session`) dan impor playlist.
+2. Login Google untuk YouTube dan impor playlist, dengan pemutaran lewat player YouTube.
+3. Ikon dan identitas aplikasi.
+4. Build Android lewat EAS untuk pengujian internal di Google Play.
+
+## Struktur
+
+```text
+src/app/          Layar (Expo Router): (tabs)/ Home, Library, Connect; playlist/[id]; player; settings
+src/components/   Artwork, background, tab bar dan mini player, ikon, label sumber
+src/state/        Tipe data, store, dan demo library
+src/theme/        Token desain (warna, font, jarak)
+```
